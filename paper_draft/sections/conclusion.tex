@@ -1,0 +1,3 @@
+\section{Conclusion}
+\label{sec:conclusion}
+We evaluated intent preservation for conversational query rewriting and tested whether clarification gating improves fidelity without excessive questioning. On a 120-example \qrecc sample, \direct rewrites achieved the highest LLM-judge scores, while \gated reduced clarification rate but slightly worsened intent fidelity ($p=0.046$). The key takeaway is that naive clarification gating reduces questions but does not improve intent preservation when direct rewrites already resolve context well. Future work should incorporate human clarification data, supervised ambiguity detectors, and broader evaluations across datasets such as \canard and \qrecc.

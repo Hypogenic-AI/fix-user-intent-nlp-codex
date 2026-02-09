@@ -1,0 +1,17 @@
+\begin{table}[t]
+    \centering
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{lccccc}
+        \toprule
+        Method & BLEU-1 & ROUGE-L & SBERT Cosine & LLM Judge & Clarification Rate \\
+        \midrule
+        \norewrite & {\bf 0.873} $\pm$ 0.113 & {\bf 0.650} $\pm$ 0.185 & 0.648 $\pm$ 0.170 & 4.708 $\pm$ 0.712 & 0.000 \\
+        \direct & 0.565 $\pm$ 0.191 & 0.608 $\pm$ 0.195 & {\bf 0.851} $\pm$ 0.123 & {\bf 4.725} $\pm$ 0.658 & 0.000 \\
+        \always & 0.529 $\pm$ 0.184 & 0.553 $\pm$ 0.184 & 0.843 $\pm$ 0.118 & 4.450 $\pm$ 0.729 & 1.000 \\
+        \gated & 0.568 $\pm$ 0.203 & 0.601 $\pm$ 0.204 & {\bf 0.851} $\pm$ 0.124 & 4.567 $\pm$ 0.692 & 0.567 \\
+        \bottomrule
+    \end{tabular}%
+    }
+    \caption{Intent preservation and clarification burden on a 120-example \qrecc sample. Best intent metrics are bolded (higher is better).}
+    \label{tab:main_results}
+\end{table}

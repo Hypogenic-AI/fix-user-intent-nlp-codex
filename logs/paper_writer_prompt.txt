@@ -1,0 +1,660 @@
+You are an academic paper writer. Generate a complete NEURIPS style paper
+based on the experiment results provided.
+
+════════════════════════════════════════════════════════════════════════════════
+                         IMPORTANT: BEFORE YOU START
+════════════════════════════════════════════════════════════════════════════════
+
+Before writing any content, you MUST complete these steps:
+
+1. READ THE SKILL: Review the paper-writer skill at templates/skills/paper-writer/SKILL.md
+2. READ THE STYLE GUIDE: Study templates/paper_writing/lab_style_guide.md carefully
+3. REVIEW EXAMPLES: Browse paper_examples/ for formatting and language patterns:
+   - Look at sections/1.introduction.tex for language style
+   - Look at tables/*.tex for table formatting
+   - Look at commands/*.tex for macro usage
+4. USE COMMAND TEMPLATES: Copy templates/paper_writing/commands/ to paper_draft/commands/
+
+CRITICAL: Reference example papers for FORMATTING and LANGUAGE STYLE only.
+Do NOT copy content, phrasing, or narrative structure from the example papers.
+The examples are in a different research domain - focus only on presentation style.
+
+════════════════════════════════════════════════════════════════════════════════
+                            EXPERIMENT REPORT
+════════════════════════════════════════════════════════════════════════════════
+
+# “Do You Mean…?”: Fixing User Intent Without Annoying Them
+
+## 1. Executive Summary
+We evaluated how often LLM rewrites preserve user intent and whether clarification gating improves intent preservation without excessive questioning on QReCC conversational queries. On a 120-example context-heavy sample, a gated clarification policy reduced clarification rate to 56.7% but did not improve intent preservation over direct rewrites; LLM-judged intent fidelity was slightly worse (p=0.046). Practically, this suggests that naive gating based on perceived ambiguity can reduce questions but does not automatically improve intent fidelity.
+
+## 2. Goal
+**Hypothesis**: Autocomplete/intent-rewrite systems sometimes alter intent; a clarification-gated policy improves intent preservation without spamming users.
+
+**Why it matters**: User trust in assistants/search depends on preserving intent. Over-correcting queries can be infuriating and harmful; over-clarifying increases friction.
+
+**Expected impact**: A clear evaluation framework for intent preservation and a measured approach to asking clarifying questions.
+
+## 3. Data Construction
+
+### Dataset Description
+- **Source**: QReCC test split (`datasets/qrecc/qrecc-test.json`)
+- **Size**: 16,451 total examples
+- **Task**: conversational question rewriting with gold rewrites
+- **Selection**: sampled 120 examples with non-empty context
+- **Known biases**: QReCC is constructed from multiple sources; contexts can be stylized or web-sourced.
+
+### Example Samples
+| Context (truncated) | Question | Gold Rewrite |
+|---|---|---|
+| Pete Maravich history in Atlanta Hawks… | How did he play in his next season? | How did Pete Maravich play in his fourth season with the Atlanta Hawks? |
+| Will Forte SNL history… | did he have any notable characters that he played? | Did Will Forte have any notable characters that he played on SNL? |
+| 529 plan overview… | What are the types of plans | What are the types of 529 plans? |
+
+### Data Quality
+- Missing values: **0**
+- Duplicates: **90** (by Context+Question)
+- Avg question length: **7.33 tokens** (std 2.31)
+- Avg rewrite length: **11.40 tokens** (std 5.15)
+- Avg context length: **5.83 turns** (std 4.63)
+
+### Preprocessing Steps
+1. Filtered to examples with non-empty context to focus on intent preservation in context.
+2. Sampled 120 examples using a fixed random seed (42).
+
+### Train/Val/Test Splits
+- Used **test split only** for evaluation. No training performed.
+
+## 4. Experiment Description
+
+### Methodology
+
+#### High-Level Approach
+We compare four methods on the same sample: no rewrite, direct LLM rewrite, always-clarify then rewrite, and gated-clarify (ask only when ambiguity is predicted high). Intent preservation is measured via similarity to gold rewrites, semantic similarity, and LLM-judge scoring.
+
+#### Why This Method?
+Direct rewrite baselines are common in conversational QA. Clarification is a known alternative, but its use is often uncalibrated. Our approach tests whether a simple gating policy can improve intent fidelity without excessive questioning.
+
+### Implementation Details
+
+#### Tools and Libraries
+- openai: 2.17.0
+- sentence-transformers: 5.2.2
+- torch: 2.10.0+cu128
+- numpy: 2.4.2
+- pandas: 3.0.0
+- rouge-score: 0.1.2
+- scipy: 1.17.0
+
+#### Models
+- **Rewrite + Clarification + Judge**: `gpt-4.1` (temperature=0)
+- **Semantic similarity**: `sentence-transformers/all-MiniLM-L6-v2`
+
+#### Hyperparameters
+| Parameter | Value | Selection Method |
+|---|---|---|
+| temperature | 0.0 | fixed for determinism |
+| max_tokens | 200 | fixed |
+| sample_size | 120 | resource-aware |
+| SBERT batch_size | 64 (GPU) | based on 24GB GPU |
+
+#### Training Procedure or Analysis Pipeline
+1. Generate rewrites and clarification decisions via LLM prompts.
+2. For always-clarify and gated-clarify, ask a clarification question and generate a user answer consistent with gold intent.
+3. Compute BLEU-1, ROUGE-L, SBERT cosine similarity vs gold rewrite.
+4. LLM judge rates intent preservation (1–5) per method.
+
+### Experimental Protocol
+
+#### Reproducibility Information
+- Runs: 1 (temperature=0)
+- Random seed: 42
+- Hardware: 2x NVIDIA RTX 3090 (24GB each); GPU used for embeddings
+- Execution time: ~1–2 hours for LLM calls + evaluation
+
+#### Evaluation Metrics
+- **BLEU-1 / ROUGE-L**: overlap with gold rewrite; proxy for rewrite fidelity.
+- **SBERT cosine**: semantic similarity to gold rewrite; captures paraphrase intent.
+- **LLM-judge score (1–5)**: direct intent preservation judgment.
+- **Clarification rate**: fraction of examples that trigger a clarification question.
+
+### Raw Results
+
+#### Tables (mean ± std)
+| Method | BLEU-1 | ROUGE-L | SBERT Cosine | LLM Judge | Clarification Rate |
+|---|---|---|---|---|---|
+| No rewrite | 0.873 ± 0.113 | 0.650 ± 0.185 | 0.648 ± 0.170 | 4.708 ± 0.712 | 0.0 |
+| Direct rewrite | 0.565 ± 0.191 | 0.608 ± 0.195 | 0.851 ± 0.123 | 4.725 ± 0.658 | 0.0 |
+| Always clarify | 0.529 ± 0.184 | 0.553 ± 0.184 | 0.843 ± 0.118 | 4.450 ± 0.729 | 1.0 |
+| Gated clarify | 0.568 ± 0.203 | 0.601 ± 0.204 | 0.851 ± 0.124 | 4.567 ± 0.692 | 0.567 |
+
+#### Statistical Tests (Gated vs Direct)
+- BLEU-1: t=0.259, p=0.796 (ns)
+- ROUGE-L: t=-0.450, p=0.654 (ns)
+- SBERT: t=-0.031, p=0.975 (ns)
+- LLM-judge: t=-2.017, p=0.046, d=-0.185 (gated slightly worse)
+
+#### Visualizations
+- Data distributions: `results/plots/data_distributions.png`
+- Method comparison: `results/plots/method_comparison.png`
+
+#### Output Locations
+- Model outputs: `results/model_outputs/llm_outputs.jsonl`
+- Metrics: `results/metrics/metrics.json`
+- Plots: `results/plots/`
+
+## 5. Result Analysis
+
+### Key Findings
+1. Direct LLM rewrites are semantically close to gold rewrites (SBERT ~0.85) and have the highest LLM-judge intent scores.
+2. Always-clarify reduces intent fidelity and increases burden (100% clarification rate), suggesting over-asking harms user experience.
+3. Gated clarification reduced questions to 56.7% but did not improve intent preservation; LLM-judge scores were slightly worse than direct rewrite.
+
+### Hypothesis Testing Results
+- The hypothesis that gating improves intent preservation **was not supported**.
+- Gating reduced clarification rate but did not improve intent fidelity.
+
+### Comparison to Baselines
+Direct rewrites outperformed both always-clarify and gated-clarify on LLM-judge scores. No-rewrite achieved high lexical overlap due to many gold rewrites being identical to the original question; however, semantic similarity and LLM-judge favored direct rewrites for context-heavy cases.
+
+### Surprises and Insights
+- The LLM judge rated direct rewrites higher than clarification-based methods, suggesting clarification may introduce noise when the model already resolves context correctly.
+- The gating policy often triggered on ambiguity but did not yield better rewrites, indicating a mismatch between “perceived ambiguity” and actual intent errors.
+
+### Error Analysis
+Common failure modes (qualitative inspection in outputs):
+- Clarification questions focused on irrelevant details.
+- Clarification answers (synthetic) occasionally simplified or drifted from the gold rewrite.
+- For certain context-heavy questions, the direct rewrite already resolved intent well, making clarification redundant.
+
+### Limitations
+- Clarification answers were synthetic (LLM-generated from gold rewrite), not from real users.
+- LLM-judge is a proxy for human evaluation and may share biases with the rewrite model.
+- Evaluation on a single dataset and a 120-example sample.
+
+## 6. Conclusions
+The study confirms that direct LLM rewrites generally preserve intent well in QReCC-like contexts, and naive clarification gating does not improve intent preservation. Clarification can reduce user burden if gated, but careful design is required to avoid worsening intent fidelity.
+
+## 7. Next Steps
+1. Replace synthetic clarification answers with human-in-the-loop or dataset-sourced clarifications.
+2. Train a dedicated ambiguity detector using supervised labels to improve gating accuracy.
+3. Extend evaluation to other datasets (e.g., CANARD, ClariQ) and add human judgments.
+
+## References
+- Elgohary et al., 2019 (CANARD)
+- Anantha et al., 2021 (QReCC)
+- Kumar &amp; Black, 2020 (ClarQ)
+- Voskarides et al., 2020 (QuReTeC)
+- Vakulenko et al., 2020 (Reformulation sensitivity)
+- Mo et al., 2023 (ConvGQR)
+- Wu et al., 2021 (CONQRR)
+
+
+════════════════════════════════════════════════════════════════════════════════
+                            RESEARCH PLAN
+════════════════════════════════════════════════════════════════════════════════
+
+## Motivation &amp; Novelty Assessment
+
+### Why This Research Matters
+Autocomplete and intent-detection systems frequently rewrite user inputs to be “helpful,” but small changes can shift intent and harm outcomes. Measuring intent preservation directly and designing clarification policies that only ask when necessary can improve user trust, reduce friction, and increase task success across search, assistants, and enterprise workflows.
+
+### Gap in Existing Work
+Prior work emphasizes rewrite quality or downstream retrieval/QA metrics, often treating intent preservation as an indirect proxy. Clarification is typically studied separately from rewriting, with limited evidence on when clarifications help versus annoy, and few studies quantify the trade-off between intent preservation and clarification burden.
+
+### Our Novel Contribution
+We introduce an intent-preservation evaluation that combines gold rewrite similarity with LLM-judged intent fidelity, and we test a clarification-gating policy that asks questions only when ambiguity risk is high. This bridges rewrite evaluation and clarification strategy in a single experimental framework.
+
+### Experiment Justification
+- Experiment 1: Establish how often LLM rewrites preserve intent compared to gold rewrites and direct LLM judging. This directly measures the core problem: “helpful” corrections that alter intent.
+- Experiment 2: Test whether clarification gating improves intent preservation without excessive questioning, quantifying the trade-off between clarification rate and intent fidelity.
+
+## Research Question
+How often do modern LLM-based rewrite systems alter user intent, and can a gated clarification policy improve intent preservation without excessive user burden?
+
+## Background and Motivation
+Conversational query rewriting is widely used to disambiguate context-dependent questions, but existing evaluations rarely measure intent preservation explicitly. Clarification-question research shows improvements when questions are asked, yet user annoyance and over-asking remain under-studied. This work targets the practical gap: when to rewrite versus when to ask.
+
+## Hypothesis Decomposition
+1. LLM rewrites sometimes diverge from the user’s intended goal even when fluent and grammatical.
+2. A clarification-gated policy improves intent preservation compared to direct rewriting.
+3. Clarification-gated policy reduces question volume versus always-clarify while retaining most of the intent gains.
+
+## Proposed Methodology
+
+### Approach
+Use QReCC to measure intent preservation of LLM rewrites against gold rewrites and LLM-judge scoring. Implement a clarification-gated policy that asks a question only when predicted ambiguity is high. Compare against no-clarification and always-clarify baselines.
+
+### Experimental Steps
+1. Load QReCC test set and sample a manageable subset (e.g., 200 examples) with conversational context.
+2. Generate LLM rewrites (baseline) for each example.
+3. Score intent preservation with metrics: BLEU/ROUGE against gold rewrite, semantic similarity (SBERT), and LLM-judge fidelity score.
+4. Build a clarification-gated policy: LLM predicts ambiguity risk; if high, ask a clarification question and generate a refined rewrite using the answer.
+5. Evaluate clarification rate and intent-preservation improvements; compare against “never clarify” and “always clarify.”
+
+### Baselines
+- No-rewrite baseline: original user question as-is.
+- Direct LLM rewrite (no clarification).
+- Always-clarify: ask a clarification question for every example before rewriting.
+- Clarification-gated: ask only when ambiguity is predicted high.
+
+### Evaluation Metrics
+- Rewrite similarity: BLEU, ROUGE-L vs gold rewrite.
+- Semantic similarity: cosine similarity of sentence embeddings (SBERT) between model rewrite and gold.
+- LLM-judge intent fidelity: 1–5 rating (with rubric).
+- Clarification burden: % of examples that trigger a question.
+
+### Statistical Analysis Plan
+- Paired t-test or Wilcoxon signed-rank test on per-example scores between methods.
+- Bootstrap confidence intervals for mean differences.
+- Significance threshold: alpha = 0.05, Holm-Bonferroni for multiple comparisons.
+
+## Expected Outcomes
+If the hypothesis holds, clarification-gated policy improves LLM-judge fidelity and semantic similarity over direct rewrite, while keeping clarification rates substantially lower than always-clarify.
+
+## Timeline and Milestones
+- Phase 0–1 (planning): 30–45 min
+- Phase 2 (setup + data prep): 30 min
+- Phase 3–4 (implementation + experiments): 2–3 hours
+- Phase 5 (analysis): 45 min
+- Phase 6 (documentation): 45 min
+
+## Potential Challenges
+- API cost/latency for LLM evaluations.
+- Clarification simulation requires careful prompting to avoid leakage.
+- Ambiguity prediction could be noisy; mitigate with conservative thresholding.
+
+## Success Criteria
+- Statistically significant improvement in intent preservation metrics for clarification-gated vs direct rewrite.
+- Clarification rate at least 40% lower than always-clarify with minimal loss in intent fidelity.
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          LITERATURE REVIEW
+════════════════════════════════════════════════════════════════════════════════
+
+# Literature Review: Fixing User Intent Without Annoying Them
+
+## Review Scope
+
+### Research Question
+How can we design intent-preserving query rewriting and clarification mechanisms that improve user outcomes without excessive or annoying questioning?
+
+### Inclusion Criteria
+- Papers on conversational question rewriting or query reformulation
+- Papers on clarification question generation / asking when to clarify
+- Datasets for conversational QA/search with rewrite or clarification supervision
+- Empirical evaluations of rewriting vs QA robustness
+
+### Exclusion Criteria
+- Non-conversational query expansion without context
+- Datasets without conversational context or clarification relevance
+- Pure dialogue generation without intent preservation objectives
+
+### Time Frame
+2019–2023 (with emphasis on 2020–2023)
+
+### Sources
+- ACL Anthology
+- arXiv
+- HuggingFace datasets
+- GitHub repositories
+
+## Search Log
+
+| Date | Query | Source | Results | Notes |
+|------|-------|--------|---------|-------|
+| 2026-02-09 | &#34;question rewriting conversational&#34; | ACL/arXiv | 10+ | Selected CANARD, QReCC, ConvGQR |
+| 2026-02-09 | &#34;clarifying questions dataset&#34; | ACL/GitHub | 5+ | Selected ClarQ paper, ClariQ repo |
+| 2026-02-09 | &#34;conversational query rewriting RL&#34; | arXiv | 5+ | Selected CONQRR |
+
+## Paper Summaries
+
+### Paper 1: Can You Unpack That? Learning to Rewrite Questions-in-Context
+- **Authors**: Ahmed Elgohary, Denis Peskov, Jordan Boyd-Graber
+- **Year**: 2019
+- **Source**: EMNLP-IJCNLP (ACL Anthology D19-1605)
+- **Key Contribution**: Introduces CANARD dataset and the task of question-in-context rewriting.
+- **Methodology**: Seq2Seq rewriting of conversational questions into self-contained forms.
+- **Datasets Used**: CANARD (built from QuAC).
+- **Results**: Demonstrates feasibility of rewriting models for context-dependent questions.
+- **Code Available**: Not found publicly.
+- **Relevance to Our Research**: Core benchmark for intent-preserving question rewriting.
+
+### Paper 2: Open-Domain Question Answering Goes Conversational via Question Rewriting
+- **Authors**: Raviteja Anantha, Svitlana Vakulenko, Zhucheng Tu, Shayne Longpre, Stephen Pulman, Srinivas Chappidi
+- **Year**: 2021
+- **Source**: NAACL-HLT (ACL Anthology 2021.naacl-main.44)
+- **Key Contribution**: Introduces QReCC dataset and baseline pipeline for conversational QA via rewriting.
+- **Methodology**: Rewriting + retrieval + reading comprehension pipeline.
+- **Datasets Used**: QReCC (new), built from TREC CAsT, QuAC, NQ.
+- **Results**: Establishes baselines and highlights difficulty gap to human performance.
+- **Code Available**: Yes (ml-qrecc).
+- **Relevance to Our Research**: Primary dataset for studying intent preservation in rewriting.
+
+### Paper 3: ClarQ: A large-scale and diverse dataset for Clarification Question Generation
+- **Authors**: Vaibhav Kumar, Alan W Black
+- **Year**: 2020
+- **Source**: ACL (ACL Anthology 2020.acl-main.651)
+- **Key Contribution**: Introduces ClarQ dataset with large-scale clarification questions from StackExchange.
+- **Methodology**: Bootstrapped dataset creation with classifier-based filtering.
+- **Datasets Used**: ClarQ dataset.
+- **Results**: Demonstrates downstream QA gains from clarification data.
+- **Code Available**: Not specified.
+- **Relevance to Our Research**: Provides data for asking clarifying questions without over-asking.
+
+### Paper 4: Query Resolution for Conversational Search with Limited Supervision
+- **Authors**: Nikos Voskarides, Dan Li, Pengjie Ren, Evangelos Kanoulas, Maarten de Rijke
+- **Year**: 2020
+- **Source**: arXiv:2005.11723
+- **Key Contribution**: QuReTeC term-level query resolution.
+- **Methodology**: Binary term classification to add context terms to current query; distant supervision.
+- **Datasets Used**: Conversational search collections with relevance labels.
+- **Results**: Improves retrieval without retraining underlying search engine.
+- **Code Available**: Repository link not accessible.
+- **Relevance to Our Research**: Alternative to full rewrite; preserves intent by controlled term addition.
+
+### Paper 5: A Wrong Answer or a Wrong Question? An Intricate Relationship between Question Reformulation and Answer Selection in Conversational QA
+- **Authors**: Svitlana Vakulenko, Shayne Longpre, Zhucheng Tu, Raviteja Anantha
+- **Year**: 2020
+- **Source**: arXiv:2010.06835
+- **Key Contribution**: Analysis framework for QA sensitivity to question reformulation.
+- **Methodology**: Uses rewrites to probe robustness of answer selection and retrieval.
+- **Datasets Used**: TREC CAsT, QuAC (CANARD).
+- **Results**: Retrieval is sensitive to minor reformulations; RC less so.
+- **Code Available**: Not specified.
+- **Relevance to Our Research**: Directly evaluates intent preservation and impact of rewrites.
+
+### Paper 6: ConvGQR: Generative Query Reformulation for Conversational Search
+- **Authors**: Fengran Mo, Kelong Mao, Yutao Zhu, Yihong Wu, Kaiyu Huang, Jian-Yun Nie
+- **Year**: 2023
+- **Source**: ACL 2023 (ACL Anthology 2023.acl-long.274)
+- **Key Contribution**: Generative PLM-based query reformulation with answer-aware signals.
+- **Methodology**: Two PLMs for query rewriting and answer generation; optimize reformulation quality.
+- **Datasets Used**: Conversational search benchmarks.
+- **Results**: Improved retrieval over rewrite baselines.
+- **Code Available**: Not found publicly.
+- **Relevance to Our Research**: Modern generative rewrite approach with intent-aware signals.
+
+### Paper 7: CONQRR: Conversational Query Rewriting for Retrieval with Reinforcement Learning
+- **Authors**: Zeqiu Wu, Yi Luan, Hannah Rashkin, David Reitter, Hannaneh Hajishirzi, Mari Ostendorf, Gaurav Singh Tomar
+- **Year**: 2021
+- **Source**: arXiv:2112.08558
+- **Key Contribution**: RL-based rewriting to optimize retrieval effectiveness.
+- **Methodology**: Reward shaping for retrieval metrics; adapts to off-the-shelf retrievers.
+- **Datasets Used**: Open-domain CQA datasets from multiple sources.
+- **Results**: Competitive retrieval improvements and robustness.
+- **Code Available**: Not found publicly.
+- **Relevance to Our Research**: Trains toward end-task metrics, useful for intent preservation.
+
+## Common Methodologies
+- **Seq2Seq rewriting**: CANARD, QReCC baselines
+- **Term selection / query resolution**: QuReTeC
+- **Reinforcement learning for retrieval-oriented rewriting**: CONQRR
+- **Generative PLM reformulation**: ConvGQR
+- **Clarification question generation / selection**: ClarQ/ClariQ
+
+## Standard Baselines
+- Seq2Seq rewrite model (BART/T5-style)
+- Rewrite + retrieval + reader pipeline (QReCC)
+- Term addition via classifier (QuReTeC)
+- No-rewrite baselines (raw question)
+
+## Evaluation Metrics
+- **Rewriting quality**: BLEU/ROUGE (if gold rewrites), or retrieval metrics downstream
+- **Retrieval**: MRR, nDCG, Recall@k
+- **QA**: Exact Match, F1
+- **Clarification**: classification accuracy/F1 for clarification need, Recall@k for question selection
+
+## Datasets in the Literature
+- **QReCC**: conversational rewriting + QA
+- **CANARD**: question-in-context rewriting
+- **ClarQ/ClariQ**: clarification question generation and selection
+- **QuAC / TREC CAsT**: source conversational datasets
+
+## Gaps and Opportunities
+- Intent preservation is often inferred indirectly via retrieval/QA metrics rather than measured explicitly.
+- Limited evaluation of user annoyance or query burden; few datasets include user preference signals.
+- Clarification strategies are typically evaluated separately from rewriting pipelines.
+
+## Recommendations for Our Experiment
+- **Recommended datasets**: QReCC (primary), CANARD-QuReTeC (term-level resolution), ClariQ/ClarQ (clarification modeling)
+- **Recommended baselines**: raw question, seq2seq rewrite, QuReTeC term selection
+- **Recommended metrics**: retrieval MRR/nDCG + QA F1; add intent-preservation proxies (rewrite fidelity vs. answer correctness)
+- **Methodological considerations**: evaluate whether clarification improves downstream performance without increasing interaction length excessively
+
+
+════════════════════════════════════════════════════════════════════════════════
+                          PAPER REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+Generate a complete academic paper with the following structure:
+
+1. TITLE
+   - Clear, specific, informative
+   - Should convey main finding or contribution
+
+2. ABSTRACT (150-250 words)
+   - Problem statement
+   - Approach
+   - Key results
+   - Significance
+
+3. INTRODUCTION
+   - Research problem and motivation
+   - Gap in existing work
+   - Our contribution (be specific)
+   - Paper organization
+
+4. RELATED WORK
+   - Organized by theme/approach
+   - Position our work relative to prior work
+   - Cite papers from literature review
+
+5. METHODOLOGY
+   - Clear description of approach
+   - Experimental setup
+   - Datasets used
+   - Evaluation metrics
+   - Baselines
+
+6. RESULTS
+   - Present results with tables and figures
+   - Statistical analysis
+   - Comparison to baselines
+   - Ablation studies (if applicable)
+
+7. DISCUSSION
+   - Interpretation of results
+   - Limitations
+   - Broader implications
+
+8. CONCLUSION
+   - Summary of contributions
+   - Key findings
+   - Future work
+
+9. REFERENCES
+   - BibTeX format
+   - All cited papers
+
+════════════════════════════════════════════════════════════════════════════════
+                          OUTPUT FORMAT
+════════════════════════════════════════════════════════════════════════════════
+
+Create a MODULAR LaTeX project with the following directory structure:
+
+paper_draft/
+├── main.tex              # Main file that imports all sections
+├── references.bib        # BibTeX references
+├── sections/
+│   ├── abstract.tex      # Abstract content
+│   ├── introduction.tex  # Introduction section
+│   ├── related_work.tex  # Related work section
+│   ├── methodology.tex   # Methodology section
+│   ├── results.tex       # Results section
+│   ├── discussion.tex    # Discussion section
+│   └── conclusion.tex    # Conclusion section
+├── figures/              # Directory for any generated figures
+├── tables/               # Directory for complex standalone tables
+└── appendix/             # Directory for appendix sections (if needed)
+
+INSTRUCTIONS:
+1. First, create the directory structure above (mkdir -p paper_draft/sections paper_draft/figures paper_draft/tables paper_draft/appendix)
+2. Write main.tex using the EXACT preamble for NEURIPS:
+
+   \documentclass{article}
+   \usepackage[final]{neurips_2025}  % NEURIPS style (neurips_2025.sty is in paper_draft/)
+   \usepackage[hidelinks]{hyperref}  % REQUIRED: clickable links
+   \usepackage{booktabs}  % REQUIRED: professional tables
+   \usepackage{graphicx}
+   \usepackage{amsmath,amssymb}
+
+   % Import command files
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+   % Use this bibliography style:
+   \bibliographystyle{plainnat}
+
+   - Use \input{sections/...} to include each section
+   - Use \bibliography{references} for references
+3. Write each section file with COMPLETE content (no placeholders)
+4. Each section file should include its \section{} command
+5. Write references.bib with all citations in BibTeX format
+6. After writing all files, compile the paper:
+   cd paper_draft && pdflatex -interaction=nonstopmode main.tex && bibtex main && pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex
+
+This modular structure allows humans to easily:
+- Edit individual sections without navigating a large file
+- Track changes per section
+- Reuse sections across different paper versions
+
+════════════════════════════════════════════════════════════════════════════════
+                          QUALITY REQUIREMENTS
+════════════════════════════════════════════════════════════════════════════════
+
+- Academic tone throughout
+- All claims must be supported by data from the experiment report
+- Proper citations using \cite{} commands
+- Clear figures and tables with proper captions
+- NO placeholder text - every section must have real content
+- The paper MUST compile without errors
+- If compilation fails, debug and fix the LaTeX errors
+
+════════════════════════════════════════════════════════════════════════════════
+                          LAB WRITING STYLE
+════════════════════════════════════════════════════════════════════════════════
+
+Follow these lab-specific conventions to match our paper style:
+
+1. LANGUAGE STYLE:
+   - Use active voice: "We propose", "We examine", "We focus on"
+   - Be direct and confident: "Our main question is...", "We hypothesize that..."
+   - State things clearly and simply - prefer plain language over jargon
+   - Use bold questions as paragraph organizers: {\bf what is X?}
+   - Include specific quantitative claims: "8.97% over baseline"
+   - Avoid fancy wording: "utilize" → "use", "facilitate" → "help"
+
+2. INTRODUCTION STRUCTURE:
+   - Engaging hook (get to the point quickly)
+   - Problem importance
+   - Gap identification
+   - Your approach with method figure reference
+   - Quantitative preview of results
+   - Contribution bullets (3-4 items, action verbs)
+
+3. CONTRIBUTION LISTS:
+   \begin{itemize}[leftmargin=*,itemsep=0pt,topsep=0pt]
+       \item We propose...
+       \item We conduct...
+       \item We complement...
+   \end{itemize}
+
+4. MODULAR COMMANDS STRUCTURE:
+   Create paper_draft/commands/ directory with:
+   - math.tex: Math notation macros (copy from templates/paper_writing/commands/)
+   - general.tex: Formatting macros (copy from templates/paper_writing/commands/)
+   - macros.tex: Project-specific term definitions
+
+   In main.tex, include:
+   \input{commands/math}
+   \input{commands/general}
+   \input{commands/macros}
+
+5. REFERENCE CONVENTIONS:
+   Use reference macros from math.tex:
+   - \figref{fig:name} for "figure 1" (lowercase, in-sentence)
+   - \Figref{fig:name} for "Figure 1" (capitalized, start of sentence)
+   - \secref{sec:name} for "section 2"
+
+6. TEXT FORMATTING:
+   - Use \para{Header text} for bold paragraph headers
+   - Define method/dataset names with \textsc and \xspace:
+     \newcommand{\methodname}{\textsc{MethodName}\xspace}
+
+7. TABLE FORMATTING:
+   - Use booktabs package (no vertical lines)
+   - Use \resizebox{\textwidth}{!}{...} for wide tables
+   - Use @{} to remove padding at table edges
+   - Use \cmidrule(lr){x-y} for sub-headers
+   - Use \textsc{} for dataset/method names in headers
+   - Bold best results with {\bf ...}
+
+8. FIGURE FORMATTING:
+   - Use 0.32\textwidth for 3-column subfigures
+   - Use 0.95\linewidth for full-width figures
+   - Use \input{figures/legend} for shared legends
+   - Write self-contained captions explaining key observations
+
+9. RESULTS PRESENTATION:
+   - Define \increase and \decrease for colored arrows (green up, red down)
+   - Bold best results in tables
+   - Report confidence intervals when available
+
+10. ALGORITHM STYLING:
+    - Use algpseudocode with [noend]
+    - Use \triangleright for comments
+
+11. HYPERLINKS (REQUIRED):
+    - Always use \usepackage[hidelinks]{hyperref} or with colored links
+    - All citations, section refs, figure refs, table refs must be clickable
+    - This is essential for reader navigation
+
+════════════════════════════════════════════════════════════════════════════════
+                          WORKFLOW: REVIEW AND REFLECT
+════════════════════════════════════════════════════════════════════════════════
+
+Before calling finish, you MUST complete these review steps:
+
+1. REVIEW RESOURCES (at the start):
+   - Read templates/skills/paper-writer/SKILL.md for detailed guidance
+   - Study templates/paper_writing/lab_style_guide.md for style conventions
+   - Browse paper_examples/ for formatting and language patterns
+
+2. SELF-REFLECTION (before finishing):
+   After writing all sections, review your work against these criteria:
+
+   LANGUAGE CHECK:
+   - [ ] Is the writing clear and jargon-free?
+   - [ ] Are claims specific with quantitative support?
+   - [ ] Is active voice used throughout?
+
+   FORMATTING CHECK:
+   - [ ] Does main.tex include \input{commands/math}, \input{commands/general}, \input{commands/macros}?
+   - [ ] Is hyperref package included for clickable references?
+   - [ ] Do tables use booktabs (no vertical lines)?
+   - [ ] Are best results bolded in tables?
+   - [ ] Are figures/tables properly captioned?
+
+   STRUCTURE CHECK:
+   - [ ] Does introduction follow: hook → importance → gap → approach → preview → contributions?
+   - [ ] Are contribution bullets specific with action verbs?
+   - [ ] Does the paper compile without errors?
+
+3. FIX ISSUES:
+   - Address any issues found in the self-reflection
+   - Re-compile and verify the PDF looks correct
+
+Only after completing this review should you consider the paper finished.

@@ -1,0 +1,7 @@
+{
+  "model_rewrite": "gpt-4.1",
+  "model_judge": "gpt-4.1",
+  "temperature": 0.0,
+  "sample_size": 120,
+  "timestamp": "2026-02-08T23:26:54.670845"
+}

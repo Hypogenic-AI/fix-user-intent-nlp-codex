@@ -1,0 +1,7 @@
+\section{Related Work}
+\label{sec:related_work}
+\para{Conversational question rewriting.} Datasets such as \canard and \qrecc formalize the task of rewriting context-dependent questions into standalone queries~\cite{elgohary2019canard,anantha2021qrecc}. Subsequent work improves rewriting and downstream retrieval with generative reformulation~\cite{mo2023convgqr} and reinforcement learning for retrieval objectives~\cite{wu2021conqrr}. Term-level query resolution offers a lighter-weight alternative that can preserve intent by adding context terms rather than fully rewriting~\cite{voskarides2020quretec}. Unlike these efforts, we focus on directly measuring intent preservation and user burden across rewrite and clarification policies.
+
+\para{Clarification question generation.} Large-scale datasets such as \clarq and related benchmarks enable learning when and how to ask clarifying questions~\cite{kumar2020clarq}. However, clarification is typically evaluated separately from rewriting pipelines. We connect these lines of work by measuring how clarification gating changes intent fidelity in rewrite systems.
+
+\para{Reformulation sensitivity.} Prior analysis shows that retrieval and QA can be sensitive to seemingly minor reformulations~\cite{vakulenko2020wrong}. This motivates evaluating intent preservation directly rather than inferring it from downstream metrics. Our study builds on this insight by testing whether clarification reduces unintended reformulation drift.

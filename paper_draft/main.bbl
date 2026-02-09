@@ -1,0 +1,62 @@
+\begin{thebibliography}{7}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Anantha et~al.(2021)Anantha, Vakulenko, Tu, Longpre, Pulman, and
+  Chappidi]{anantha2021qrecc}
+Raviteja Anantha, Svitlana Vakulenko, Zhucheng Tu, Shayne Longpre, Stephen
+  Pulman, and Srinivas Chappidi.
+\newblock Open-domain question answering goes conversational via question
+  rewriting.
+\newblock In \emph{Proceedings of the 2021 Conference of the North American
+  Chapter of the Association for Computational Linguistics: Human Language
+  Technologies}, pages 520--534, 2021.
+
+\bibitem[Elgohary et~al.(2019)Elgohary, Peskov, and
+  Boyd-Graber]{elgohary2019canard}
+Ahmed Elgohary, Denis Peskov, and Jordan Boyd-Graber.
+\newblock Can you unpack that? learning to rewrite questions-in-context.
+\newblock In \emph{Proceedings of the 2019 Conference on Empirical Methods in
+  Natural Language Processing and the 9th International Joint Conference on
+  Natural Language Processing (EMNLP-IJCNLP)}, pages 591--601, 2019.
+
+\bibitem[Kumar and Black(2020)]{kumar2020clarq}
+Vaibhav Kumar and Alan~W. Black.
+\newblock Clarq: A large-scale and diverse dataset for clarification question
+  generation.
+\newblock In \emph{Proceedings of the 58th Annual Meeting of the Association
+  for Computational Linguistics}, pages 632--647, 2020.
+
+\bibitem[Mo et~al.(2023)Mo, Mao, Zhu, Wu, Huang, and Nie]{mo2023convgqr}
+Fengran Mo, Kelong Mao, Yutao Zhu, Yihong Wu, Kaiyu Huang, and Jian-Yun Nie.
+\newblock Convgqr: Generative query reformulation for conversational search.
+\newblock In \emph{Proceedings of the 61st Annual Meeting of the Association
+  for Computational Linguistics (Volume 1: Long Papers)}, pages 4961--4976,
+  2023.
+
+\bibitem[Vakulenko et~al.(2020)Vakulenko, Longpre, Tu, and
+  Anantha]{vakulenko2020wrong}
+Svitlana Vakulenko, Shayne Longpre, Zhucheng Tu, and Raviteja Anantha.
+\newblock A wrong answer or a wrong question? an intricate relationship between
+  question reformulation and answer selection in conversational qa.
+\newblock \emph{arXiv preprint arXiv:2010.06835}, 2020.
+
+\bibitem[Voskarides et~al.(2020)Voskarides, Li, Ren, Kanoulas, and
+  de~Rijke]{voskarides2020quretec}
+Nikos Voskarides, Dan Li, Pengjie Ren, Evangelos Kanoulas, and Maarten
+  de~Rijke.
+\newblock Query resolution for conversational search with limited supervision.
+\newblock \emph{arXiv preprint arXiv:2005.11723}, 2020.
+
+\bibitem[Wu et~al.(2021)Wu, Luan, Rashkin, Reitter, Hajishirzi, Ostendorf, and
+  Tomar]{wu2021conqrr}
+Zeqiu Wu, Yi~Luan, Hannah Rashkin, David Reitter, Hannaneh Hajishirzi, Mari
+  Ostendorf, and Gaurav~Singh Tomar.
+\newblock Conqrr: Conversational query rewriting for retrieval with
+  reinforcement learning.
+\newblock \emph{arXiv preprint arXiv:2112.08558}, 2021.
+
+\end{thebibliography}

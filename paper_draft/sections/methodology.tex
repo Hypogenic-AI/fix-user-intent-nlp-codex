@@ -1,0 +1,27 @@
+\section{Methodology}
+\label{sec:methodology}
+\para{Problem formulation.} Given a conversation context $C$ and a user question $q$, a rewriting system outputs a standalone rewrite $r$ that should preserve the intent of the gold rewrite $g$. A clarification policy may ask a question $c$ before producing $r$. Our goal is to maximize intent preservation while minimizing user burden, measured by clarification rate.
+
+\begin{figure}[t]
+    \centering
+    \fbox{\begin{minipage}{0.9\linewidth}
+    \small
+    \textbf{Input:} context $C$ and question $q$.\\
+    \textbf{Policy:} choose \norewrite, \direct, \always, or \gated.\\
+    \textbf{Clarify (optional):} ask $c$, obtain answer $a$.\\
+    \textbf{Rewrite:} produce $r$ from $C$, $q$, and optional $a$.\\
+    \textbf{Evaluate:} compare $r$ to gold rewrite $g$ with lexical, semantic, and LLM-judge metrics; record clarification rate.
+    \end{minipage}}
+    \caption{Overview of our rewrite-and-clarify evaluation pipeline.}
+    \label{fig:method}
+\end{figure}
+
+\para{Policies compared.} We evaluate four methods: \norewrite (use $q$ directly), \direct (rewrite without clarifying), \always (ask a clarification question for every example), and \gated (ask only when the model predicts high ambiguity).
+
+\para{Dataset and sampling.} We use the \qrecc test split (16,451 examples) and sample 120 examples with non-empty context using a fixed random seed (42). This sample has 90 duplicate Context+Question pairs, an average question length of 7.33 tokens (std 2.31), average rewrite length of 11.40 tokens (std 5.15), and average context length of 5.83 turns (std 4.63).
+
+\para{Clarification simulation.} For \always and \gated, the system asks a clarification question and we generate a synthetic user answer consistent with the gold intent. This isolates the effect of clarification from user variability, but it also introduces a limitation we discuss in \secref{sec:discussion}.
+
+\para{Evaluation metrics.} We measure intent preservation via BLEU-1 and ROUGE-L against the gold rewrite, SBERT cosine similarity (\texttt{all-MiniLM-L6-v2}), and an LLM judge score on a 1--5 scale. We report clarification rate as the fraction of examples that trigger a question.
+
+\para{Implementation details.} We use \textsc{GPT-4.1} (temperature 0, max tokens 200) for rewriting, clarification, and judging. SBERT embeddings are computed in batches of 64 on 2\,$\times$\,NVIDIA RTX 3090 GPUs. Each method is run once with deterministic decoding.

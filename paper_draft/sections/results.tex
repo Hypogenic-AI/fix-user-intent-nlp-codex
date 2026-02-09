@@ -1,0 +1,21 @@
+\section{Results}
+\label{sec:results}
+\input{tables/main_results}
+
+\para{Main comparison.} Table~\ref{tab:main_results} summarizes the intent-preservation metrics and clarification rate. \direct achieves the highest LLM-judge score (4.725) and ties for best SBERT cosine (0.851). \gated reduces clarification rate to 56.7\% but does not improve intent fidelity relative to \direct. \always clarifies every example and performs worst on intent metrics, indicating that uncalibrated clarification can hurt performance.
+
+\para{Statistical tests.} We compare \gated to \direct with paired t-tests on per-example scores. Differences in BLEU-1 ($t=0.259, p=0.796$), ROUGE-L ($t=-0.450, p=0.654$), and SBERT cosine ($t=-0.031, p=0.975$) are not significant. The LLM-judge score is significantly lower for \gated ($t=-2.017, p=0.046$, $d=-0.185$), indicating a small but measurable regression.
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/method_comparison.png}
+    \caption{Method comparison across intent metrics. Direct rewrites score highest on LLM-judge fidelity, while clarification-based methods show no gain in semantic similarity.}
+    \label{fig:method_comparison}
+\end{figure}
+
+\begin{figure}[t]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/data_distributions.png}
+    \caption{Distributions of question, rewrite, and context lengths for the sampled \qrecc subset. The evaluation focuses on context-heavy examples.}
+    \label{fig:data_distributions}
+\end{figure}

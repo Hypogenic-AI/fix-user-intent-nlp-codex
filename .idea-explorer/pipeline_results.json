@@ -1,0 +1,27 @@
+{
+  "success": true,
+  "stages": {
+    "resource_finder": {
+      "success": true,
+      "completion_marker": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/.resource_finder_complete",
+      "outputs": {
+        "literature_review": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/literature_review.md",
+        "resources_catalog": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/resources.md",
+        "papers_dir": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/papers",
+        "datasets_dir": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/datasets",
+        "code_dir": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/code"
+      },
+      "log_file": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/logs/resource_finder_codex.log",
+      "transcript_file": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/logs/resource_finder_codex_transcript.jsonl",
+      "elapsed_time": 713.1900501251221
+    },
+    "experiment_runner": {
+      "success": true,
+      "return_code": 0,
+      "elapsed_time": 1565.9014854431152,
+      "log_file": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/logs/execution_codex.log",
+      "transcript_file": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex/logs/execution_codex_transcript.jsonl"
+    }
+  },
+  "work_dir": "/data/hypogenicai/workspaces/fix-user-intent-nlp-codex"
+}

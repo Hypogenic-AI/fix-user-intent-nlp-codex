@@ -1,0 +1,9 @@
+\section{Discussion}
+\label{sec:discussion}
+\para{Why clarification did not help.} The \direct policy already resolves many context-heavy questions correctly, so clarification can introduce redundant or noisy information. We observed failure modes where clarification questions focused on irrelevant details or the synthetic answers simplified the original intent, which can explain the lower LLM-judge scores for \gated and \always.
+
+\para{Clarification burden trade-off.} \gated cuts the clarification rate by 43.3\% relative to \always (from 100\% to 56.7\%), but this reduction does not translate into better intent fidelity. This suggests that naive ambiguity signals are misaligned with actual intent errors and highlights the need for calibrated detectors.
+
+\para{Limitations.} Our clarifying answers are synthetic and derived from gold intent, which may not reflect real user behavior. The LLM judge is a proxy for human evaluation and may share biases with the rewrite model. The evaluation uses a single dataset and a small sample (120 examples), so conclusions should be validated at larger scale.
+
+\para{Broader implications.} Systems that rewrite user inputs should treat clarification as a precision instrument rather than a default action. Measuring intent preservation directly can inform product decisions and reduce user frustration, and future work should incorporate user annoyance signals and human-in-the-loop clarification to better align with real-world usage.

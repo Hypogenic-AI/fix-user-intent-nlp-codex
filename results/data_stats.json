@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-02-08T23:18:00.083104",
+  "total_examples": 16451,
+  "with_context": 13676,
+  "without_context": 2775,
+  "missing_fields": 0,
+  "duplicates": 90,
+  "question_len_mean": 7.327578870585374,
+  "question_len_std": 2.3073340670601463,
+  "rewrite_len_mean": 11.396875569874172,
+  "rewrite_len_std": 5.15103947485622,
+  "context_len_mean": 5.8324114035620935,
+  "context_len_std": 4.629071147908277
+}
