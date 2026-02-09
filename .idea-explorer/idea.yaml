@@ -1,0 +1,23 @@
+idea:
+  title: "\u201CDo You Mean\u2026?\u201D: Fixing User Intent Without Annoying Them"
+  domain: nlp
+  hypothesis: "Autocomplete and intent detection systems often incorrectly correct\
+    \ user input in ways that alter the intended meaning. Evaluating and improving\
+    \ intent preservation\u2014ensuring that model rewrites or clarifications maintain\
+    \ the user's original goal\u2014can lead to better user experiences. It is possible\
+    \ to design clarification mechanisms that improve intent preservation without\
+    \ overwhelming users with excessive questions.\n"
+  background:
+    description: "Autocomplete and intent detection systems can be helpful or infuriating.\
+      \ How often do models incorrectly \u201Ccorrect\u201D users in a way that changes\
+      \ the intent? Can we evaluate intent preservation: when the model rewrites a\
+      \ query or instruction, does it keep the user\u2019s goal? And can we design\
+      \ a method that improves clarification behavior without spamming questions?"
+  metadata:
+    source: IdeaHub
+    source_url: https://hypogenic.ai/ideahub/idea/86kBIv9R9Ypipm66AW2b
+    idea_id: _do_you_mean_____fixing_user_i_20260208_230126_6484da32
+    created_at: '2026-02-08T23:01:26.688005'
+    status: submitted
+    github_repo_name: fix-user-intent-nlp-codex
+    github_repo_url: https://github.com/Hypogenic-AI/fix-user-intent-nlp-codex
